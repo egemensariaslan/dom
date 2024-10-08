@@ -3,6 +3,6 @@
     <title>Hello</title>
     </head>
     <body>
-    <div>Hello {{name}}! I see your id is {{ id }}! good to see ya {% condition %}!</div>
+    <div>Hello {{author}}! I see your id is {{ date }}! good to see ya {% condition %}!</div>
     </body>
 </html>

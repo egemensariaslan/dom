@@ -4,7 +4,7 @@ console.log('Hello World!');
 
 let text: string = fs.readFileSync('./src/app.hello', 'utf-8');
 
-let regex = /(\{\{(.*?)\}\})|(\{%(.*?)%\})|([^{}]+)/g;
+let regex = /(\{\{\s*(.*?)\s*\}\})|(\{%(.*?)%\})|([^{}]+)/g;
 
 let looper;
 
@@ -47,6 +47,30 @@ function parse(tokens: Array<tokenType>) {
 }
 
 parse(tokenTree);
+
+let output: string = '';
+
+const context: any = {
+    author: 'Egemen',
+    date: '2024'
+};
+
+function compiler(tokens: Array<tokenType>) {
+
+    for (const token of tokens) {
+        switch (token.type) {
+            case 'variable':
+                const variableValue = context[token.value] || '';
+                output += variableValue;
+                break;
+        }
+    };
+
+};
+
+compiler(tokenTree);
+
+console.log(output)
 
 
 console.log(tokenTree)
