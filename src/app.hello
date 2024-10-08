@@ -1,8 +1,0 @@
-<html>
-    <head>
-    <title>Hello</title>
-    </head>
-    <body>
-    <div>Hello {{author}}! I see your id is {{ date }}! good to see ya {% condition %}!</div>
-    </body>
-</html>

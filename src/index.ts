@@ -1,8 +1,6 @@
-import fs from 'fs'
+import component from './component';
 
 console.log('Hello World!');
-
-let text: string = fs.readFileSync('./src/app.hello', 'utf-8');
 
 let regex = /(\{\{\s*(.*?)\s*\}\})|(\{%(.*?)%\})|([^{}]+)/g;
 
@@ -17,7 +15,7 @@ type tokenType = {
 const tokenTree: Array<tokenType> = [];
 
 function parse(tokens: Array<tokenType>) {
-    while ((looper = regex.exec(text)) !== null) {
+    while ((looper = regex.exec(component)) !== null) {
     
         switch (true) {
             case typeof(looper[1]) !== 'undefined':
@@ -57,14 +55,22 @@ const context: any = {
 
 function compiler(tokens: Array<tokenType>) {
 
+    const root = document.getElementById('root');
+
     for (const token of tokens) {
         switch (token.type) {
             case 'variable':
                 const variableValue = context[token.value] || '';
                 output += variableValue;
                 break;
+            case 'text':
+                output += token.value;
+                break;
         }
     };
+
+    if (!root) return;
+    root.innerHTML = output;
 
 };
 
