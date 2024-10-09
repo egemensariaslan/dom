@@ -1,15 +1,16 @@
 import component from './component';
 
-console.log('Hello World!');
+let regex = /(\{\{\s*(.*?)\s*\}\})|(\{\%(.*?)\%\})|([^{}]+)/g;
 
-let regex = /(\{\{\s*(.*?)\s*\}\})|(\{%(.*?)%\})|([^{}]+)/g;
+let conditionregex = /(\s*\$\((.*?)\)\{(.*?)\})/g
 
 let looper;
 
 type tokenType = {
     type: 'variable' | 'control' | 'text' | null,
     value: any,
-    index: number
+    index: number,
+    condition?: boolean
 }
 
 const tokenTree: Array<tokenType> = [];
@@ -26,11 +27,21 @@ function parse(tokens: Array<tokenType>) {
                 });
                 break;
             case typeof(looper[3]) !== 'undefined':
-                tokens.push({
-                    type: 'control',
-                    value: looper[4],
-                    index: looper.index
-                });
+                if (looper[4].startsWith('if')) {
+                    tokens.push({
+                        type: 'control',
+                        value: looper[4],
+                        index: looper.index,
+                        condition: true
+                    });
+                } else {
+                    tokens.push({
+                        type: 'control',
+                        value: looper[4],
+                        index: looper.index,
+                        condition: false
+                    });
+                }
                 break;
             case typeof(looper[5]) !== 'undefined':
                 tokens.push({
@@ -50,7 +61,8 @@ let output: string = '';
 
 const context: any = {
     author: 'Egemen',
-    date: '2024'
+    date: '2024',
+    deneme: 'hello'
 };
 
 function compiler(tokens: Array<tokenType>) {
@@ -66,6 +78,18 @@ function compiler(tokens: Array<tokenType>) {
             case 'text':
                 output += token.value;
                 break;
+            case 'control':
+                let conditionBuffer;
+                console.log(token.value)
+                while ((conditionBuffer = conditionregex.exec(token.value)) !== null) {
+                    console.log('Hello')
+                    console.log(conditionBuffer);
+                    if (conditionBuffer[2]) {
+                        output += context[conditionBuffer[3]];
+                        break;
+                    }
+                }
+                break;
         }
     };
 
@@ -75,8 +99,3 @@ function compiler(tokens: Array<tokenType>) {
 };
 
 compiler(tokenTree);
-
-console.log(output)
-
-
-console.log(tokenTree)

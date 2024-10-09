@@ -1,4 +1,4 @@
-const temp = `<div>Hello {{author}}! {{date}}</div>`;
+const temp = `<div>Helloo {{author}}! {{date}} {% if (deneme === 'hello'){deneme} %}</div>`;
 
 /* Will add JSX-style templating. */
 
