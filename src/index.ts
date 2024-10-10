@@ -1,101 +1,92 @@
 import component from './component';
 
-let regex = /(\{\{\s*(.*?)\s*\}\})|(\{\%(.*?)\%\})|([^{}]+)/g;
-
-let conditionregex = /(\s*\$\((.*?)\)\{(.*?)\})/g
-
-let looper;
-
 type tokenType = {
-    type: 'variable' | 'control' | 'text' | null,
+    type: 'variable' | 'rawVariable' | 'control' | 'text' | null,
     value: any,
     index: number,
     condition?: boolean
-}
+};
 
 const tokenTree: Array<tokenType> = [];
 
-function parse(tokens: Array<tokenType>) {
-    while ((looper = regex.exec(component)) !== null) {
-    
-        switch (true) {
-            case typeof(looper[1]) !== 'undefined':
-                tokens.push({
-                    type: 'variable',
-                    value: looper[2],
-                    index: looper.index
-                });
-                break;
-            case typeof(looper[3]) !== 'undefined':
-                if (looper[4].startsWith('if')) {
-                    tokens.push({
-                        type: 'control',
-                        value: looper[4],
-                        index: looper.index,
-                        condition: true
-                    });
-                } else {
-                    tokens.push({
-                        type: 'control',
-                        value: looper[4],
-                        index: looper.index,
-                        condition: false
-                    });
-                }
-                break;
-            case typeof(looper[5]) !== 'undefined':
-                tokens.push({
-                    type: 'text',
-                    value: looper[5],
-                    index: looper.index
-                });
-                break;
-        };
-    
-    };
-}
+let regex = /{%[-=]?([\s\S]*?)%}|([^{%]+)/g
 
-parse(tokenTree);
+function parse(tokens: Array<tokenType>) {
+    let match;
+    while ((match = regex.exec(component)) !== null) {
+        if (match[2]) {
+            tokenTree.push({
+                type: 'text',
+                value: match[2],
+                index: match.index
+            });
+        } else if (match[0].startsWith('{%=')) {
+            tokenTree.push({
+                type: 'variable',
+                value: match[1].trim(),
+                index: match.index
+            });
+        } else if (match[0].startsWith('{%-')) {
+            tokenTree.push({
+                type: 'rawVariable',
+                value: match[1].trim(),
+                index: match.index
+            });
+        } else {
+            tokenTree.push({
+                type: 'control',
+                value: match[1].trim(),
+                index: match.index
+            });
+        };
+    };
+};
 
 let output: string = '';
 
-const context: any = {
-    author: 'Egemen',
-    date: '2024',
-    deneme: 'hello'
+const bridge: any = {
+    testvariable: 'XSS-safe variables working!'
 };
 
-function compiler(tokens: Array<tokenType>) {
+function compile(tokens: Array<tokenType>) {
 
-    const root = document.getElementById('root');
+    let functionBody = 'let output = "";';
+    tokens.forEach((token) => {
 
-    for (const token of tokens) {
         switch (token.type) {
-            case 'variable':
-                const variableValue = context[token.value] || '';
-                output += variableValue;
-                break;
             case 'text':
-                output += token.value;
+                functionBody += `output += \`${token.value}\`;`;
+                break;
+            case 'variable':
+                functionBody += `output += \`${bridge[token.value]}\`;`;
+                break;
+            case 'rawVariable':
+                functionBody += `output += ${token.value};`;
                 break;
             case 'control':
-                let conditionBuffer;
-                console.log(token.value)
-                while ((conditionBuffer = conditionregex.exec(token.value)) !== null) {
-                    console.log('Hello')
-                    console.log(conditionBuffer);
-                    if (conditionBuffer[2]) {
-                        output += context[conditionBuffer[3]];
-                        break;
-                    }
-                }
+                functionBody += token.value + `;`;
                 break;
-        }
-    };
-
-    if (!root) return;
-    root.innerHTML = output;
-
+        };
+    });
+    functionBody += 'return output;';
+    return new Function('context', functionBody);
+    
 };
 
-compiler(tokenTree);
+function render(component: any, bridge: any) {
+    parse(tokenTree);
+    const compiledFunction = compile(tokenTree);
+    if (!compiledFunction) return console.error(`No compile.`);
+    return compiledFunction(bridge);
+};
+
+compile(tokenTree);
+
+output = render(component, bridge);
+
+const root = document.getElementById('root');
+if (root) {
+    root.innerHTML = output
+} else {
+    console.error('No root element found.')
+};
